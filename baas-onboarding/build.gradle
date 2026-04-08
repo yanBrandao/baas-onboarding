@@ -14,17 +14,28 @@ java {
 }
 
 repositories {
+	mavenLocal()
 	mavenCentral()
+}
+
+dependencyManagement {
+	imports {
+		mavenBom 'software.amazon.awssdk:bom:2.25.15'
+	}
 }
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
+	implementation 'com.tapajos.baas:baas-common:0.0.1-SNAPSHOT'
+	implementation 'software.amazon.awssdk:dynamodb-enhanced'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+	jvmArgs("-Dnet.bytebuddy.experimental=true")
 }

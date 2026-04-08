@@ -1,3 +1,23 @@
+server:
+  port: 9001
+
 spring:
   application:
     name: baas-onboarding
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+amazon:
+  dynamodb:
+    endpoint: http://localhost:4566
+  aws:
+    region: us-east-1
+  sns:
+    topic:
+      arn: arn:aws:sns:us-east-1:000000000000:baas-onboarding
+
+baas:
+  sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:baas-onboarding
+    endpoint: http://localhost:4566
+    region: us-east-1
