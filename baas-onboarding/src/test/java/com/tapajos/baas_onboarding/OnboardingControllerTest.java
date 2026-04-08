@@ -5,6 +5,7 @@ import com.tapajos.baas_onboarding.domain.Address;
 import com.tapajos.baas_onboarding.domain.Onboarding;
 import com.tapajos.baas_onboarding.usecase.GetOnboardingDetails;
 import com.tapajos.baas_onboarding.usecase.OnboardingNewCustomer;
+import com.tapajos.baas_onboarding.usecase.UpdateOnboardingStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -18,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,6 +35,9 @@ class OnboardingControllerTest {
 
     @MockitoBean
     private GetOnboardingDetails getOnboardingDetails;
+
+    @MockitoBean
+    private UpdateOnboardingStatus updateOnboardingStatus;
 
     @Test
     void shouldCreateOnboardingAndReturnId() throws Exception {
@@ -107,6 +112,40 @@ class OnboardingControllerTest {
         when(getOnboardingDetails.execute(eq("unknown-id"))).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/onboarding/unknown-id/status"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldUpdateOnboardingStatus() throws Exception {
+        Onboarding updated = new Onboarding(
+                "existing-id", "COMPLETED", "John Doe",
+                "johndoe@domain.com", "1234567890", "1234567890",
+                "1990-01-01", "Jane Doe", "base64",
+                new Address("123 Main St", "New York", "NY", "12345")
+        );
+        when(updateOnboardingStatus.execute(eq("existing-id"), eq("COMPLETED")))
+                .thenReturn(Optional.of(updated));
+
+        mockMvc.perform(patch("/onboarding/existing-id/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "status": "COMPLETED" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.onboarding_id").value("existing-id"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
+
+    @Test
+    void shouldReturn404WhenUpdatingStatusOfUnknownOnboarding() throws Exception {
+        when(updateOnboardingStatus.execute(eq("unknown-id"), eq("COMPLETED")))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(patch("/onboarding/unknown-id/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "status": "COMPLETED" }
+                                """))
                 .andExpect(status().isNotFound());
     }
 }

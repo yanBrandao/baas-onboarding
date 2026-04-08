@@ -32,6 +32,16 @@ public class DynamoOnboardingRepository implements OnboardingRepository {
         return Optional.ofNullable(entity).map(this::toDomain);
     }
 
+    @Override
+    public Optional<Onboarding> updateStatus(String onboardingId, String status) {
+        OnboardingEntity patch = new OnboardingEntity();
+        patch.setOnboardingId(onboardingId);
+        patch.setStatus(status);
+
+        OnboardingEntity updated = table.updateItem(r -> r.item(patch).ignoreNulls(true));
+        return Optional.ofNullable(updated).map(this::toDomain);
+    }
+
     private OnboardingEntity toEntity(Onboarding onboarding) {
         OnboardingEntity entity = new OnboardingEntity();
         entity.setOnboardingId(onboarding.onboardingId());

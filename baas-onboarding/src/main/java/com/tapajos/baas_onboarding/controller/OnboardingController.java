@@ -3,9 +3,11 @@ package com.tapajos.baas_onboarding.controller;
 import com.tapajos.baas_onboarding.domain.Onboarding;
 import com.tapajos.baas_onboarding.usecase.GetOnboardingDetails;
 import com.tapajos.baas_onboarding.usecase.OnboardingNewCustomer;
+import com.tapajos.baas_onboarding.usecase.UpdateOnboardingStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +22,14 @@ public class OnboardingController {
 
     private final OnboardingNewCustomer onboardingNewCustomer;
     private final GetOnboardingDetails getOnboardingDetails;
+    private final UpdateOnboardingStatus updateOnboardingStatus;
 
     public OnboardingController(OnboardingNewCustomer onboardingNewCustomer,
-                                GetOnboardingDetails getOnboardingDetails) {
+                                GetOnboardingDetails getOnboardingDetails,
+                                UpdateOnboardingStatus updateOnboardingStatus) {
         this.onboardingNewCustomer = onboardingNewCustomer;
         this.getOnboardingDetails = getOnboardingDetails;
+        this.updateOnboardingStatus = updateOnboardingStatus;
     }
 
     @PostMapping
@@ -44,6 +49,15 @@ public class OnboardingController {
     @GetMapping("/{id}/status")
     public ResponseEntity<OnboardingStatusResponse> getOnboardingStatus(@PathVariable String id) {
         return getOnboardingDetails.execute(id)
+                .map(o -> ResponseEntity.ok(new OnboardingStatusResponse(o.onboardingId(), o.status())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OnboardingStatusResponse> updateStatus(
+            @PathVariable String id,
+            @RequestBody UpdateStatusRequest request) {
+        return updateOnboardingStatus.execute(id, request.status())
                 .map(o -> ResponseEntity.ok(new OnboardingStatusResponse(o.onboardingId(), o.status())))
                 .orElse(ResponseEntity.notFound().build());
     }
