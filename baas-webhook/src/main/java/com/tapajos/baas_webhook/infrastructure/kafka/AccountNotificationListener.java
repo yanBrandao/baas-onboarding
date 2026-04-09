@@ -25,7 +25,7 @@ public class AccountNotificationListener {
         this.onboardingApiClient = onboardingApiClient;
     }
 
-    @KafkaListener(topics = "${baas.kafka.topic:baas-onboarding}", groupId = "${spring.kafka.consumer.group-id:baas-webhook-group}")
+    @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-webhook}", groupId = "${spring.kafka.consumer.group-id:baas-webhook-group}")
     public void onMessage(String payload) {
         OnboardingMessage message;
         try {

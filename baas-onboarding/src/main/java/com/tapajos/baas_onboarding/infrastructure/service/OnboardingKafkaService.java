@@ -10,11 +10,11 @@ import com.tapajos.baas_onboarding.domain.Onboarding;
 import org.springframework.stereotype.Service;
 
 @Service
-public class OnboardingSnsService {
+public class OnboardingKafkaService {
 
     private final OnboardingEventPublisher publisher;
 
-    public OnboardingSnsService(OnboardingEventPublisher publisher) {
+    public OnboardingKafkaService(OnboardingEventPublisher publisher) {
         this.publisher = publisher;
     }
 
@@ -40,13 +40,11 @@ public class OnboardingSnsService {
                 address
         );
 
-        OnboardingMetadata metadata = OnboardingMetadata.initial();
-
         OnboardingMessage message = OnboardingMessage.of(
                 onboarding.onboardingId(),
                 OnboardingStep.FRAUD_CHECK,
                 data,
-                metadata
+                OnboardingMetadata.initial()
         );
 
         publisher.publish(message);

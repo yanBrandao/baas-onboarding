@@ -3,7 +3,7 @@ package com.tapajos.baas_onboarding.usecase;
 import com.tapajos.baas_onboarding.controller.OnboardingRequest;
 import com.tapajos.baas_onboarding.domain.Address;
 import com.tapajos.baas_onboarding.domain.Onboarding;
-import com.tapajos.baas_onboarding.infrastructure.service.OnboardingSnsService;
+import com.tapajos.baas_onboarding.infrastructure.service.OnboardingKafkaService;
 import com.tapajos.baas_onboarding.repository.OnboardingRepository;
 import org.springframework.stereotype.Component;
 
@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 public class OnboardingNewCustomer {
 
     private final OnboardingRepository repository;
-    private final OnboardingSnsService snsService;
+    private final OnboardingKafkaService kafkaService;
 
-    public OnboardingNewCustomer(OnboardingRepository repository, OnboardingSnsService snsService) {
+    public OnboardingNewCustomer(OnboardingRepository repository, OnboardingKafkaService kafkaService) {
         this.repository = repository;
-        this.snsService = snsService;
+        this.kafkaService = kafkaService;
     }
 
     public String execute(OnboardingRequest request) {
@@ -42,7 +42,7 @@ public class OnboardingNewCustomer {
                 address
         );
 
-        snsService.send(onboarding);
+        kafkaService.send(onboarding);
         repository.save(onboarding);
 
         return onboarding.onboardingId();

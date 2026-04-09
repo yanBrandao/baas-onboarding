@@ -94,6 +94,13 @@ for entry in "${SERVICES[@]}"; do
   port="${entry##*:}"
   log_file="$LOG_DIR/${name}.log"
 
+  log "Building $name (clean build) ..."
+  (cd "$REPO_ROOT/$name" && ./gradlew clean build -q) || {
+    fail "Build failed for $name. Run: cd $name && ./gradlew clean build"
+    exit 1
+  }
+  ok "$name built"
+
   log "Starting $name (port $port) ..."
   (cd "$REPO_ROOT/$name" && ./gradlew bootRun > "$log_file" 2>&1) &
   echo $! > "$LOG_DIR/${name}.pid"

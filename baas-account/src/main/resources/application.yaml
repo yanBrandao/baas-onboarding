@@ -23,4 +23,5 @@ amazon:
 baas:
   kafka:
     bootstrap-servers: localhost:9092
-    topic: baas-onboarding
+    consumer-topic: baas-account
+    topic: baas-webhook

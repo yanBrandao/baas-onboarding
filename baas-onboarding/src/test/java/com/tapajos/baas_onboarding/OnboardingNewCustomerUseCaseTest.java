@@ -3,7 +3,7 @@ package com.tapajos.baas_onboarding;
 import com.tapajos.baas_onboarding.controller.AddressRequest;
 import com.tapajos.baas_onboarding.controller.OnboardingRequest;
 import com.tapajos.baas_onboarding.domain.Onboarding;
-import com.tapajos.baas_onboarding.infrastructure.service.OnboardingSnsService;
+import com.tapajos.baas_onboarding.infrastructure.service.OnboardingKafkaService;
 import com.tapajos.baas_onboarding.repository.OnboardingRepository;
 import com.tapajos.baas_onboarding.usecase.OnboardingNewCustomer;
 import org.junit.jupiter.api.Test;
@@ -24,19 +24,19 @@ class OnboardingNewCustomerUseCaseTest {
     private OnboardingRepository repository;
 
     @Mock
-    private OnboardingSnsService snsService;
+    private OnboardingKafkaService kafkaService;
 
     @InjectMocks
     private OnboardingNewCustomer useCase;
 
     @Test
-    void shouldSendSnsBeforeSavingToDynamo() {
+    void shouldPublishToKafkaBeforeSavingToDynamo() {
         OnboardingRequest request = buildRequest();
 
         useCase.execute(request);
 
-        InOrder inOrder = inOrder(snsService, repository);
-        inOrder.verify(snsService).send(any(Onboarding.class));
+        InOrder inOrder = inOrder(kafkaService, repository);
+        inOrder.verify(kafkaService).send(any(Onboarding.class));
         inOrder.verify(repository).save(any(Onboarding.class));
     }
 

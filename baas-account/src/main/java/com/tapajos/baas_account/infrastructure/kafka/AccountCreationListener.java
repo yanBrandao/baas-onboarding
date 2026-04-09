@@ -25,7 +25,7 @@ public class AccountCreationListener {
         this.eventPublisher = eventPublisher;
     }
 
-    @KafkaListener(topics = "${baas.kafka.topic:baas-onboarding}", groupId = "${spring.kafka.consumer.group-id:baas-account-group}")
+    @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-account}", groupId = "${spring.kafka.consumer.group-id:baas-account-group}")
     public void onMessage(String payload) {
         OnboardingMessage message;
         try {

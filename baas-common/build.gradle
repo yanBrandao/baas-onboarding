@@ -19,9 +19,7 @@ repositories {
 }
 
 dependencies {
-	api 'org.springframework.kafka:spring-kafka'
 	api 'com.fasterxml.jackson.core:jackson-databind'
-	api 'org.springframework.boot:spring-boot-autoconfigure'
 	api 'org.slf4j:slf4j-api'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

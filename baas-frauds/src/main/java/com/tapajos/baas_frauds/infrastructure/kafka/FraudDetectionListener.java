@@ -23,8 +23,9 @@ public class FraudDetectionListener {
         this.eventPublisher = eventPublisher;
     }
 
-    @KafkaListener(topics = "${baas.kafka.topic:baas-onboarding}", groupId = "${spring.kafka.consumer.group-id:baas-frauds-group}")
+    @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-frauds}", groupId = "${spring.kafka.consumer.group-id:baas-frauds-group}")
     public void onMessage(String payload) {
+        logger.info("FraudDetectionListener: Received raw payload from Kafka");
         OnboardingMessage message;
         try {
             message = OBJECT_MAPPER.readValue(payload, OnboardingMessage.class);

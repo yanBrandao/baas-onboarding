@@ -15,4 +15,5 @@ spring:
 baas:
   kafka:
     bootstrap-servers: localhost:9092
-    topic: baas-onboarding
+    consumer-topic: baas-frauds
+    topic: baas-account

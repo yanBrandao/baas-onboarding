@@ -1,21 +1,22 @@
-package com.tapajos.baas.common.kafka;
+package com.tapajos.baas_account.infrastructure.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tapajos.baas.common.kafka.OnboardingEventPublisher;
 import com.tapajos.baas.common.message.OnboardingMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
-public class OnboardingKafkaPublisher implements OnboardingEventPublisher {
+public class KafkaEventPublisher implements OnboardingEventPublisher {
 
-    private static final Logger logger = LoggerFactory.getLogger(OnboardingKafkaPublisher.class);
+    private static final Logger logger = LoggerFactory.getLogger(KafkaEventPublisher.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String topic;
 
-    public OnboardingKafkaPublisher(KafkaTemplate<String, String> kafkaTemplate, String topic) {
+    public KafkaEventPublisher(KafkaTemplate<String, String> kafkaTemplate, String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
     }

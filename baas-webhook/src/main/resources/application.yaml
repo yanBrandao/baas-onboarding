@@ -15,7 +15,7 @@ spring:
 baas:
   kafka:
     bootstrap-servers: localhost:9092
-    topic: baas-onboarding
+    consumer-topic: baas-webhook
   api:
     onboarding:
       url: http://localhost:9001/onboarding
