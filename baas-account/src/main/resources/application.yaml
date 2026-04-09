@@ -6,9 +6,21 @@ spring:
     name: baas-account
   jackson:
     property-naming-strategy: SNAKE_CASE
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: baas-account-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 amazon:
   dynamodb:
     endpoint: http://localhost:4566
   aws:
     region: us-east-1
+
+baas:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic: baas-onboarding

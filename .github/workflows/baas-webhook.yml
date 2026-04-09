@@ -1,0 +1,38 @@
+name: baas-webhook CI
+
+on:
+  push:
+    paths:
+      - 'baas-webhook/**'
+      - 'baas-common/**'
+  pull_request:
+    paths:
+      - 'baas-webhook/**'
+      - 'baas-common/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Make gradlew executable (baas-common)
+        run: chmod +x baas-common/gradlew
+
+      - name: Publish baas-common to Maven Local
+        working-directory: baas-common
+        run: ./gradlew publishToMavenLocal
+
+      - name: Make gradlew executable (baas-webhook)
+        run: chmod +x baas-webhook/gradlew
+
+      - name: Build baas-webhook
+        working-directory: baas-webhook
+        run: ./gradlew build

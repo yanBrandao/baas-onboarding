@@ -4,13 +4,15 @@ server:
 spring:
   application:
     name: baas-frauds
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: baas-frauds-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 baas:
-  sns:
-    topic-arn: arn:aws:sns:us-east-1:000000000000:baas-onboarding
-    endpoint: http://localhost:4566
-    region: us-east-1
-  sqs:
-    queue-name: baas-fraud-queue
-    endpoint: http://localhost:4566
-    region: us-east-1
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic: baas-onboarding

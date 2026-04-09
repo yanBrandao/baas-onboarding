@@ -1,3 +1,21 @@
+server:
+  port: 9004
+
 spring:
   application:
     name: baas-webhook
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: baas-webhook-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+baas:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic: baas-onboarding
+  api:
+    onboarding:
+      url: http://localhost:9001/onboarding

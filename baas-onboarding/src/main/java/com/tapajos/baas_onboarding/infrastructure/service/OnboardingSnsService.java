@@ -1,20 +1,20 @@
 package com.tapajos.baas_onboarding.infrastructure.service;
 
+import com.tapajos.baas.common.kafka.OnboardingEventPublisher;
 import com.tapajos.baas.common.message.OnboardingAddress;
 import com.tapajos.baas.common.message.OnboardingData;
 import com.tapajos.baas.common.message.OnboardingMessage;
 import com.tapajos.baas.common.message.OnboardingMetadata;
 import com.tapajos.baas.common.message.OnboardingStep;
-import com.tapajos.baas.common.sns.OnboardingSnsPublisher;
 import com.tapajos.baas_onboarding.domain.Onboarding;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OnboardingSnsService {
 
-    private final OnboardingSnsPublisher publisher;
+    private final OnboardingEventPublisher publisher;
 
-    public OnboardingSnsService(OnboardingSnsPublisher publisher) {
+    public OnboardingSnsService(OnboardingEventPublisher publisher) {
         this.publisher = publisher;
     }
 

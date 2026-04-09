@@ -55,6 +55,19 @@ for ((i = 1; i <= 20; i++)); do
   sleep 3
 done
 
+log "Waiting for Kafka to be ready on localhost:9092 ..."
+for ((i = 1; i <= 30; i++)); do
+  if bash -c 'echo > /dev/tcp/localhost/9092' 2>/dev/null; then
+    ok "Kafka is ready"
+    break
+  fi
+  if [[ $i -eq 30 ]]; then
+    fail "Kafka did not become ready in time — check: docker compose logs kafka"
+    exit 1
+  fi
+  sleep 3
+done
+
 log "Waiting for frontend (nginx) to be ready on http://localhost:3000 ..."
 for ((i = 1; i <= 20; i++)); do
   if curl -sf http://localhost:3000 > /dev/null; then
