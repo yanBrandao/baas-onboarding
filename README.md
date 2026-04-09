@@ -37,6 +37,7 @@ baas-onboarding ──► SNS ──► FRAUD_CHECK
 | Module | Description |
 |---|---|
 | `baas-onboarding` | REST entry point — receives requests, stores state in DynamoDB, fires the first SNS event |
+| `baas-frauds` | Fraud detection service — listens on `baas-fraud-queue` SQS, runs fraud checks, and publishes result back to SNS |
 | `baas-common` | Shared library — canonical message types, step enums, and `OnboardingSnsPublisher` used by all microservices |
 
 ---
@@ -116,9 +117,22 @@ Every message published to SNS follows this structure:
 docker compose up -d
 ```
 
-This automatically creates the `Onboarding` DynamoDB table and the `baas-onboarding` SNS topic via the init script at `localstack/init-scripts/init-aws.sh`.
+The init script at `localstack/init-scripts/init-aws.sh` automatically provisions:
+- `Onboarding` DynamoDB table
+- `baas-onboarding` SNS topic
+- `baas-fraud-queue` SQS queue (subscribed to the SNS topic)
 
-**2. Run the service**
+> Wait a few seconds after starting before running the services — the init script runs asynchronously.
+
+**2. Publish `baas-common` to Maven local**
+
+Run once, or after any change to `baas-common`:
+
+```bash
+cd baas-common && ./gradlew publishToMavenLocal
+```
+
+**3. Run `baas-onboarding`**
 
 ```bash
 cd baas-onboarding
@@ -127,12 +141,28 @@ cd baas-onboarding
 
 The API will be available at `http://localhost:9001`.
 
+**4. Run `baas-frauds`** _(separate terminal)_
+
+```bash
+cd baas-frauds
+./gradlew bootRun
+```
+
+The fraud service will be available at `http://localhost:9002` and will start consuming messages from `baas-fraud-queue`.
+
+> **End-to-end flow:** Posting to `POST /onboarding` triggers an SNS event → SQS delivers it to `baas-frauds` → the fraud check runs → result is published back to SNS.
+
 ---
 
 ## 🧪 Running Tests
 
 ```bash
+# baas-onboarding
 cd baas-onboarding
+./gradlew test
+
+# baas-frauds
+cd baas-frauds
 ./gradlew test
 ```
 

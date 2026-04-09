@@ -41,4 +41,8 @@ public record OnboardingMessage(
     ) {
         return new OnboardingMessage(onboardingId, step, step.nextSteps(), data, metadata);
     }
+
+    public OnboardingMessage withMetadata(OnboardingMetadata metadata) {
+        return new OnboardingMessage(onboardingId, step, nextSteps, data, metadata);
+    }
 }

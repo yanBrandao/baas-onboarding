@@ -12,13 +12,13 @@ public class OnboardingSnsPublisher {
 
     private static final Logger logger = LoggerFactory.getLogger(OnboardingSnsPublisher.class);
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final SnsClient snsClient;
-    private final ObjectMapper objectMapper;
     private final String topicArn;
 
-    public OnboardingSnsPublisher(SnsClient snsClient, ObjectMapper objectMapper, String topicArn) {
+    public OnboardingSnsPublisher(SnsClient snsClient, String topicArn) {
         this.snsClient = snsClient;
-        this.objectMapper = objectMapper;
         this.topicArn = topicArn;
     }
 
@@ -27,7 +27,7 @@ public class OnboardingSnsPublisher {
      */
     public void publish(OnboardingMessage message) {
         try {
-            String payload = objectMapper.writeValueAsString(message);
+            String payload = OBJECT_MAPPER.writeValueAsString(message);
             logger.info("Publishing SNS message [onboarding_id={}, step={}]",
                     message.onboardingId(), message.step());
 

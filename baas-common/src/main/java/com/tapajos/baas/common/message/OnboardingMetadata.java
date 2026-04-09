@@ -30,12 +30,12 @@ public record OnboardingMetadata(
     }
 
     /**
-     * Returns a copy with the updated_at timestamp refreshed to now.
+     * Returns a copy with the error and status updated.
      */
-    public OnboardingMetadata withUpdatedAt() {
+    public OnboardingMetadata withError(OnboardingError error) {
         return new OnboardingMetadata(
             fraudCheck, customerCreation, accountCreation,
-            error, status, createdAt, Instant.now().toString()
+            error, OnboardingStatus.FAILED, createdAt, Instant.now().toString()
         );
     }
 }

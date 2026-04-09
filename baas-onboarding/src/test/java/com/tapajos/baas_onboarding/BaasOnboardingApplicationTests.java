@@ -16,8 +16,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 })
 class BaasOnboardingApplicationTests {
 
-    // OnboardingSnsPublisher depends on Jackson 2 ObjectMapper which is no longer
-    // auto-configured in Spring Boot 4 (Jackson 3). Mock it to allow context to load.
     @MockitoBean
     OnboardingSnsPublisher onboardingSnsPublisher;
 

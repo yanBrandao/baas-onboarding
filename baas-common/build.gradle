@@ -27,6 +27,8 @@ dependencyManagement {
 dependencies {
     api 'com.fasterxml.jackson.core:jackson-databind'
     api 'software.amazon.awssdk:sns'
+    api 'software.amazon.awssdk:sqs'
+    api 'io.awspring.cloud:spring-cloud-aws-starter-sqs:3.3.0'
 
     compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     compileOnly 'org.springframework.boot:spring-boot-starter-logging'
