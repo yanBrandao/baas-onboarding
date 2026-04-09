@@ -17,3 +17,13 @@ services:
       - "${LOCALSTACK_VOLUME_DIR:-./.localstack}:/var/lib/localstack"
       - "./localstack/init-scripts:/etc/localstack/init/ready.d"
       - "/var/run/docker.sock:/var/run/docker.sock"
+
+  frontend:
+    container_name: baas_frontend
+    build:
+      context: ./baas-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # resolves to host on Linux/WSL2

@@ -53,6 +53,19 @@ for ((i = 1; i <= 20; i++)); do
   sleep 3
 done
 
+log "Waiting for frontend (nginx) to be ready on http://localhost:3000 ..."
+for ((i = 1; i <= 20; i++)); do
+  if curl -sf http://localhost:3000 > /dev/null; then
+    ok "Frontend is UP  (http://localhost:3000)"
+    break
+  fi
+  if [[ $i -eq 20 ]]; then
+    fail "Frontend did not become ready in time — check: docker compose logs frontend"
+    exit 1
+  fi
+  sleep 3
+done
+
 # ── 2. publish baas-common ─────────────────────────────────────────────────────
 
 log "Publishing baas-common to Maven local ..."
@@ -94,6 +107,14 @@ for entry in "${SERVICES[@]}"; do
   fi
 done
 
+frontend_status=$(curl -sf http://localhost:3000 > /dev/null 2>&1 && echo "UP" || echo "UNREACHABLE")
+if [[ "$frontend_status" == "UP" ]]; then
+  ok "frontend        → UP  (http://localhost:3000)"
+else
+  fail "frontend        → UNREACHABLE  (http://localhost:3000)"
+  all_ok=false
+fi
+
 echo ""
 if $all_ok; then
   ok "All services are UP"
@@ -105,5 +126,5 @@ fi
 # ── cleanup hint ───────────────────────────────────────────────────────────────
 
 echo ""
-log "PIDs stored in $LOG_DIR/*.pid — to stop all services:"
+log "PIDs stored in $LOG_DIR/*.pid — to stop Spring Boot services:"
 log "  kill \$(cat $LOG_DIR/*.pid) && docker compose -f $REPO_ROOT/docker-compose.yml down"
