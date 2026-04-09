@@ -1,0 +1,16 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: baas-frauds
+
+baas:
+  sns:
+    topic-arn: arn:aws:sns:us-east-1:000000000000:baas-onboarding
+    endpoint: http://localhost:4566
+    region: us-east-1
+  sqs:
+    queue-name: baas-fraud-queue
+    endpoint: http://localhost:4566
+    region: us-east-1

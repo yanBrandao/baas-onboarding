@@ -8,9 +8,20 @@ echo "SNS topic 'baas-onboarding' created."
 # Create DynamoDB Table
 awslocal --region us-east-1 --endpoint-url=http://localhost:4566 dynamodb create-table \
     --table-name Onboarding \
-    --attribute-definitions AttributeName=onboardingId,AttributeType=S \
-    --key-schema AttributeName=onboardingId,KeyType=HASH \
+    --attribute-definitions AttributeName=onboarding_id,AttributeType=S \
+    --key-schema AttributeName=onboarding_id,KeyType=HASH \
     --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
 echo "DynamoDB table 'Onboarding' created."
+
+# Create SQS Queue
+awslocal --region us-east-1 --endpoint-url=http://localhost:4566 sqs create-queue --queue-name baas-fraud-queue
+echo "SQS queue 'baas-fraud-queue' created."
+
+# Subscribe SQS to SNS
+awslocal --region us-east-1 --endpoint-url=http://localhost:4566 sns subscribe \
+    --topic-arn arn:aws:sns:us-east-1:000000000000:baas-onboarding \
+    --protocol sqs \
+    --notification-endpoint arn:aws:sqs:us-east-1:000000000000:baas-fraud-queue
+echo "SQS queue 'baas-fraud-queue' subscribed to SNS topic 'baas-onboarding'."
 
 echo "Localstack initialization complete."
