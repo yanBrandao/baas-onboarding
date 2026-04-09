@@ -6,6 +6,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICES=(
   "baas-onboarding:9001"
   "baas-frauds:9002"
+  "baas-account:9003"
+  "baas-webhook:9004"
 )
 
 LOG_DIR="$REPO_ROOT/.logs"

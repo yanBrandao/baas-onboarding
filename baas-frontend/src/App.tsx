@@ -1,18 +1,31 @@
 import { useState } from 'react'
 import { OnboardingForm } from '@/components/OnboardingForm'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { OnboardingStatus } from '@/components/OnboardingStatus'
 import './index.css'
 
-type View = 'form' | 'success'
+type View = 'form' | 'status'
+
+const STORAGE_KEY = 'baas_onboarding_id'
 
 export default function App() {
-  const [view, setView] = useState<View>('form')
-  const [onboardingId, setOnboardingId] = useState<string>('')
+  const [onboardingId, setOnboardingId] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEY) || ''
+  })
+  
+  const [view, setView] = useState<View>(() => {
+    return localStorage.getItem(STORAGE_KEY) ? 'status' : 'form'
+  })
 
   function handleSuccess(id: string) {
     setOnboardingId(id)
-    setView('success')
+    localStorage.setItem(STORAGE_KEY, id)
+    setView('status')
+  }
+
+  function handleClear() {
+    localStorage.removeItem(STORAGE_KEY)
+    setOnboardingId('')
+    setView('form')
   }
 
   return (
@@ -28,29 +41,8 @@ export default function App() {
 
         {view === 'form' && <OnboardingForm onSuccess={handleSuccess} />}
 
-        {view === 'success' && (
-          <Card className="text-center">
-            <CardHeader>
-              <CardTitle className="text-green-600">Application Submitted!</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-3">
-              <p className="text-muted-foreground text-sm">
-                Your onboarding request was received. Your application ID:
-              </p>
-              <Badge variant="secondary" className="font-mono text-sm px-4 py-1.5">
-                {onboardingId}
-              </Badge>
-              <p className="text-xs text-muted-foreground mt-2">
-                We'll process your application and get in touch soon.
-              </p>
-              <button
-                onClick={() => setView('form')}
-                className="text-xs text-primary underline mt-2"
-              >
-                Submit another application
-              </button>
-            </CardContent>
-          </Card>
+        {view === 'status' && onboardingId && (
+          <OnboardingStatus onboardingId={onboardingId} onClear={handleClear} />
         )}
 
       </div>
