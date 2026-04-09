@@ -1,0 +1,33 @@
+name: baas-frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'baas-frontend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'baas-frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: baas-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: baas-frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: baas-frontend
+        run: npm run build

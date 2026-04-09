@@ -1,0 +1,35 @@
+name: baas-frauds
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'baas-frauds/**'
+      - 'baas-common/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'baas-frauds/**'
+      - 'baas-common/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Publish baas-common to Maven local
+        working-directory: baas-common
+        run: ./gradlew publishToMavenLocal
+
+      - name: Build & test
+        working-directory: baas-frauds
+        run: ./gradlew build
