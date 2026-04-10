@@ -5,6 +5,7 @@ import com.tapajos.baas_onboarding.domain.Address;
 import com.tapajos.baas_onboarding.domain.Onboarding;
 import com.tapajos.baas_onboarding.infrastructure.service.OnboardingKafkaService;
 import com.tapajos.baas_onboarding.repository.OnboardingRepository;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,6 +19,7 @@ public class OnboardingNewCustomer {
         this.kafkaService = kafkaService;
     }
 
+    @Observed(name = "baas.onboarding.create", contextualName = "create onboarding workflow")
     public String execute(OnboardingRequest request) {
         Address address = null;
         if (request.address() != null) {

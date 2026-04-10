@@ -5,6 +5,7 @@ import com.tapajos.baas.common.message.OnboardingMessage;
 import com.tapajos.baas.common.message.OnboardingStep;
 import com.tapajos.baas_webhook.infrastructure.client.OnboardingApiClient;
 import com.tapajos.baas_webhook.infrastructure.service.CustomerNotificationService;
+import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,6 +27,11 @@ public class AccountNotificationListener {
     }
 
     @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-webhook}", groupId = "${spring.kafka.consumer.group-id:baas-webhook-group}")
+    @Observed(
+            name = "baas.webhook.consume",
+            contextualName = "process account notification event",
+            lowCardinalityKeyValues = {"messaging.system", "kafka", "messaging.operation", "process"}
+    )
     public void onMessage(String payload) {
         OnboardingMessage message;
         try {

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKIP_BUILD=false
 
 SERVICES=(
   "baas-onboarding:9001"
@@ -18,6 +19,34 @@ mkdir -p "$LOG_DIR"
 log()  { echo "[$(date '+%H:%M:%S')] $*"; }
 ok()   { echo "[$(date '+%H:%M:%S')] ✓ $*"; }
 fail() { echo "[$(date '+%H:%M:%S')] ✗ $*" >&2; }
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [--skip-build]
+
+Options:
+  --skip-build   Skip the clean build step for each microservice before bootRun
+  -h, --help     Show this help message
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-build)
+      SKIP_BUILD=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "Unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
 
 wait_for_health() {
   local name="$1" port="$2"
@@ -68,6 +97,45 @@ for ((i = 1; i <= 30; i++)); do
   sleep 3
 done
 
+log "Waiting for Jaeger to be ready on http://localhost:16686 ..."
+for ((i = 1; i <= 20; i++)); do
+  if curl -sf http://localhost:16686 > /dev/null; then
+    ok "Jaeger is UP  (http://localhost:16686)"
+    break
+  fi
+  if [[ $i -eq 20 ]]; then
+    fail "Jaeger did not become ready in time — check: docker compose logs jaeger"
+    exit 1
+  fi
+  sleep 3
+done
+
+log "Waiting for Prometheus to be ready on http://localhost:9090 ..."
+for ((i = 1; i <= 20; i++)); do
+  if curl -sf http://localhost:9090/-/ready > /dev/null; then
+    ok "Prometheus is UP  (http://localhost:9090)"
+    break
+  fi
+  if [[ $i -eq 20 ]]; then
+    fail "Prometheus did not become ready in time — check: docker compose logs prometheus"
+    exit 1
+  fi
+  sleep 3
+done
+
+log "Waiting for Grafana to be ready on http://localhost:3001 ..."
+for ((i = 1; i <= 20; i++)); do
+  if curl -sf http://localhost:3001/api/health > /dev/null; then
+    ok "Grafana is UP  (http://localhost:3001)"
+    break
+  fi
+  if [[ $i -eq 20 ]]; then
+    fail "Grafana did not become ready in time — check: docker compose logs grafana"
+    exit 1
+  fi
+  sleep 3
+done
+
 log "Waiting for frontend (nginx) to be ready on http://localhost:3000 ..."
 for ((i = 1; i <= 20; i++)); do
   if curl -sf http://localhost:3000 > /dev/null; then
@@ -94,12 +162,16 @@ for entry in "${SERVICES[@]}"; do
   port="${entry##*:}"
   log_file="$LOG_DIR/${name}.log"
 
-  log "Building $name (clean build) ..."
-  (cd "$REPO_ROOT/$name" && ./gradlew clean build -q) || {
-    fail "Build failed for $name. Run: cd $name && ./gradlew clean build"
-    exit 1
-  }
-  ok "$name built"
+  if [[ "$SKIP_BUILD" == true ]]; then
+    log "Skipping build for $name (--skip-build)"
+  else
+    log "Building $name (clean build) ..."
+    (cd "$REPO_ROOT/$name" && ./gradlew clean build -q) || {
+      fail "Build failed for $name. Run: cd $name && ./gradlew clean build"
+      exit 1
+    }
+    ok "$name built"
+  fi
 
   log "Starting $name (port $port) ..."
   (cd "$REPO_ROOT/$name" && ./gradlew bootRun > "$log_file" 2>&1) &

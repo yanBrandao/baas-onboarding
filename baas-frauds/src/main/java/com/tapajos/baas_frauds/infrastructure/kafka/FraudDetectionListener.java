@@ -6,6 +6,7 @@ import com.tapajos.baas.common.message.OnboardingError;
 import com.tapajos.baas.common.message.OnboardingMessage;
 import com.tapajos.baas.common.message.OnboardingMetadata;
 import com.tapajos.baas.common.message.OnboardingStep;
+import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -24,6 +25,11 @@ public class FraudDetectionListener {
     }
 
     @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-frauds}", groupId = "${spring.kafka.consumer.group-id:baas-frauds-group}")
+    @Observed(
+            name = "baas.frauds.consume",
+            contextualName = "process fraud check event",
+            lowCardinalityKeyValues = {"messaging.system", "kafka", "messaging.operation", "process"}
+    )
     public void onMessage(String payload) {
         logger.info("FraudDetectionListener: Received raw payload from Kafka");
         OnboardingMessage message;

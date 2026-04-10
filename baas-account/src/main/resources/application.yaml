@@ -8,6 +8,10 @@ spring:
     property-naming-strategy: SNAKE_CASE
   kafka:
     bootstrap-servers: localhost:9092
+    listener:
+      observation-enabled: true
+    template:
+      observation-enabled: true
     consumer:
       group-id: baas-account-group
       auto-offset-reset: earliest
@@ -19,6 +23,25 @@ amazon:
     endpoint: http://localhost:4566
   aws:
     region: us-east-1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    prometheus:
+      access: unrestricted
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 
 baas:
   kafka:

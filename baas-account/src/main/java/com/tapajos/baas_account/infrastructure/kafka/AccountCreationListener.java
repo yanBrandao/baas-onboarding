@@ -6,6 +6,7 @@ import com.tapajos.baas.common.message.OnboardingMessage;
 import com.tapajos.baas.common.message.OnboardingStep;
 import com.tapajos.baas_account.domain.Currency;
 import com.tapajos.baas_account.usecase.CreateAccount;
+import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,6 +27,11 @@ public class AccountCreationListener {
     }
 
     @KafkaListener(topics = "${baas.kafka.consumer-topic:baas-account}", groupId = "${spring.kafka.consumer.group-id:baas-account-group}")
+    @Observed(
+            name = "baas.account.consume",
+            contextualName = "process account creation event",
+            lowCardinalityKeyValues = {"messaging.system", "kafka", "messaging.operation", "process"}
+    )
     public void onMessage(String payload) {
         OnboardingMessage message;
         try {

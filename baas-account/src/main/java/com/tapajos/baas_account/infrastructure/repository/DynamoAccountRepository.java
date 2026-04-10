@@ -4,6 +4,7 @@ import com.tapajos.baas_account.domain.Account;
 import com.tapajos.baas_account.domain.AccountStatus;
 import com.tapajos.baas_account.domain.Currency;
 import com.tapajos.baas_account.repository.AccountRepository;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -23,6 +24,11 @@ public class DynamoAccountRepository implements AccountRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.account.save",
+            contextualName = "save account to dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "PutItem", "db.name", "Account"}
+    )
     public Account save(Account account) {
         AccountEntity entity = toEntity(account);
         table.putItem(entity);
@@ -30,6 +36,11 @@ public class DynamoAccountRepository implements AccountRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.account.find",
+            contextualName = "load account from dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "GetItem", "db.name", "Account"}
+    )
     public Optional<Account> findById(String accountId) {
         Key key = Key.builder().partitionValue(accountId).build();
         AccountEntity entity = table.getItem(key);
@@ -37,6 +48,11 @@ public class DynamoAccountRepository implements AccountRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.account.update-balance",
+            contextualName = "update account balance in dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "UpdateItem", "db.name", "Account"}
+    )
     public Optional<Account> updateBalance(Account account, BigDecimal newBalance) {
         AccountEntity patch = new AccountEntity();
         patch.setAccountId(account.accountId());
@@ -48,6 +64,11 @@ public class DynamoAccountRepository implements AccountRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.account.update-status",
+            contextualName = "update account status in dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "UpdateItem", "db.name", "Account"}
+    )
     public Optional<Account> updateStatus(String accountId, String status, Long version) {
         AccountEntity patch = new AccountEntity();
         patch.setAccountId(accountId);

@@ -3,6 +3,7 @@ package com.tapajos.baas_onboarding.infrastructure.repository;
 import com.tapajos.baas_onboarding.domain.Address;
 import com.tapajos.baas_onboarding.domain.Onboarding;
 import com.tapajos.baas_onboarding.repository.OnboardingRepository;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -21,11 +22,21 @@ public class DynamoOnboardingRepository implements OnboardingRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.onboarding.save",
+            contextualName = "save onboarding to dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "PutItem", "db.name", "Onboarding"}
+    )
     public void save(Onboarding onboarding) {
         table.putItem(toEntity(onboarding));
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.onboarding.find",
+            contextualName = "load onboarding from dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "GetItem", "db.name", "Onboarding"}
+    )
     public Optional<Onboarding> findById(String onboardingId) {
         Key key = Key.builder().partitionValue(onboardingId).build();
         OnboardingEntity entity = table.getItem(key);
@@ -33,6 +44,11 @@ public class DynamoOnboardingRepository implements OnboardingRepository {
     }
 
     @Override
+    @Observed(
+            name = "baas.dynamodb.onboarding.update",
+            contextualName = "update onboarding in dynamodb",
+            lowCardinalityKeyValues = {"db.system", "dynamodb", "db.operation", "UpdateItem", "db.name", "Onboarding"}
+    )
     public Optional<Onboarding> updateStatus(String onboardingId, String status) {
         OnboardingEntity patch = new OnboardingEntity();
         patch.setOnboardingId(onboardingId);

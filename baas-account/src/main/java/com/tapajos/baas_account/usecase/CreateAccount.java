@@ -4,6 +4,7 @@ import com.tapajos.baas_account.domain.Account;
 import com.tapajos.baas_account.domain.AccountStatus;
 import com.tapajos.baas_account.domain.Currency;
 import com.tapajos.baas_account.repository.AccountRepository;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class CreateAccount {
         this.accountRepository = accountRepository;
     }
 
+    @Observed(name = "baas.account.create", contextualName = "create account")
     public Account execute(String onboardingId, Currency currency) {
         Account account = new Account(
                 UUID.randomUUID().toString(),

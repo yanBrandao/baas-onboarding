@@ -6,11 +6,34 @@ spring:
     name: baas-frauds
   kafka:
     bootstrap-servers: localhost:9092
+    listener:
+      observation-enabled: true
+    template:
+      observation-enabled: true
     consumer:
       group-id: baas-frauds-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    prometheus:
+      access: unrestricted
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
 
 baas:
   kafka:

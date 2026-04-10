@@ -1,6 +1,7 @@
 package com.tapajos.baas_webhook.infrastructure.client;
 
 import com.tapajos.baas_webhook.domain.UpdateStatusRequest;
+import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,11 @@ public class OnboardingApiClient {
         this.onboardingBaseUrl = onboardingBaseUrl;
     }
 
+    @Observed(
+            name = "baas.webhook.onboarding.update-status",
+            contextualName = "call onboarding status api",
+            lowCardinalityKeyValues = {"http.request.method", "PATCH", "peer.service", "baas-onboarding"}
+    )
     public void updateStatus(String onboardingId, String status) {
         String url = String.format("%s/%s/status", onboardingBaseUrl, onboardingId);
         logger.info("Patching onboarding status at url: {}", url);

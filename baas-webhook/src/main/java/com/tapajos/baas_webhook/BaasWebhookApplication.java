@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.annotation.EnableKafka;
 
+import static org.springframework.web.client.RestClient.*;
+
 @EnableKafka
 @SpringBootApplication
 public class BaasWebhookApplication {
@@ -20,7 +22,7 @@ public class BaasWebhookApplication {
 	}
 
 	@Bean
-	public org.springframework.web.client.RestClient.Builder restClientBuilder() {
-		return org.springframework.web.client.RestClient.builder();
+	public Builder restClientBuilder() {
+		return builder();
 	}
 }

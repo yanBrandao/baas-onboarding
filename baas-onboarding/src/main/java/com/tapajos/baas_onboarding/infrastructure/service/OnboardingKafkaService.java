@@ -7,6 +7,7 @@ import com.tapajos.baas.common.message.OnboardingMessage;
 import com.tapajos.baas.common.message.OnboardingMetadata;
 import com.tapajos.baas.common.message.OnboardingStep;
 import com.tapajos.baas_onboarding.domain.Onboarding;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,6 +19,11 @@ public class OnboardingKafkaService {
         this.publisher = publisher;
     }
 
+    @Observed(
+            name = "baas.onboarding.kafka.publish",
+            contextualName = "publish onboarding event",
+            lowCardinalityKeyValues = {"messaging.system", "kafka", "messaging.destination.name", "baas-frauds"}
+    )
     public void send(Onboarding onboarding) {
         OnboardingAddress address = null;
         if (onboarding.address() != null) {
