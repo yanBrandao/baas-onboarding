@@ -25,7 +25,7 @@ usage() {
 Usage: $(basename "$0") [--skip-build]
 
 Options:
-  --skip-build   Skip the clean build step for each microservice before bootRun
+  --skip-build   Skip the build step and use existing jars
   -h, --help     Show this help message
 EOF
 }
@@ -66,7 +66,38 @@ wait_for_health() {
   return 1
 }
 
-# ── 1. docker compose ──────────────────────────────────────────────────────────
+find_jar() {
+  local name="$1"
+  local jar
+  jar=$(ls "$REPO_ROOT/$name/build/libs/"*.jar 2>/dev/null | grep -v '\-plain\.jar' | head -1)
+  if [[ -z "$jar" ]]; then
+    fail "No jar found for $name — run without --skip-build"
+    exit 1
+  fi
+  echo "$jar"
+}
+
+# ── 1. build all microservices ─────────────────────────────────────────────────
+
+if [[ "$SKIP_BUILD" == true ]]; then
+  log "Skipping build phase (--skip-build)"
+else
+  log "Publishing baas-common to Maven local ..."
+  (cd "$REPO_ROOT/baas-common" && ./gradlew publishToMavenLocal -q)
+  ok "baas-common published"
+
+  for entry in "${SERVICES[@]}"; do
+    name="${entry%%:*}"
+    log "Building $name ..."
+    (cd "$REPO_ROOT/$name" && ./gradlew clean build -x test -q) || {
+      fail "Build failed for $name. Run: cd $name && ./gradlew clean build"
+      exit 1
+    }
+    ok "$name built"
+  done
+fi
+
+# ── 2. docker compose ──────────────────────────────────────────────────────────
 
 log "Starting docker compose ..."
 docker compose -f "$REPO_ROOT/docker-compose.yml" up -d
@@ -92,19 +123,6 @@ for ((i = 1; i <= 30; i++)); do
   fi
   if [[ $i -eq 30 ]]; then
     fail "Kafka did not become ready in time — check: docker compose logs kafka"
-    exit 1
-  fi
-  sleep 3
-done
-
-log "Waiting for Jaeger to be ready on http://localhost:16686 ..."
-for ((i = 1; i <= 20; i++)); do
-  if curl -sf http://localhost:16686 > /dev/null; then
-    ok "Jaeger is UP  (http://localhost:16686)"
-    break
-  fi
-  if [[ $i -eq 20 ]]; then
-    fail "Jaeger did not become ready in time — check: docker compose logs jaeger"
     exit 1
   fi
   sleep 3
@@ -149,32 +167,16 @@ for ((i = 1; i <= 20; i++)); do
   sleep 3
 done
 
-# ── 2. publish baas-common ─────────────────────────────────────────────────────
-
-log "Publishing baas-common to Maven local ..."
-(cd "$REPO_ROOT/baas-common" && ./gradlew publishToMavenLocal -q)
-ok "baas-common published"
-
-# ── 3. start microservices one by one ─────────────────────────────────────────
+# ── 3. start microservices ─────────────────────────────────────────────────────
 
 for entry in "${SERVICES[@]}"; do
   name="${entry%%:*}"
   port="${entry##*:}"
   log_file="$LOG_DIR/${name}.log"
+  jar=$(find_jar "$name")
 
-  if [[ "$SKIP_BUILD" == true ]]; then
-    log "Skipping build for $name (--skip-build)"
-  else
-    log "Building $name (clean build) ..."
-    (cd "$REPO_ROOT/$name" && ./gradlew clean build -q) || {
-      fail "Build failed for $name. Run: cd $name && ./gradlew clean build"
-      exit 1
-    }
-    ok "$name built"
-  fi
-
-  log "Starting $name (port $port) ..."
-  (cd "$REPO_ROOT/$name" && ./gradlew bootRun > "$log_file" 2>&1) &
+  log "Starting $name (port $port) from $jar ..."
+  java -jar "$jar" > "$log_file" 2>&1 &
   echo $! > "$LOG_DIR/${name}.pid"
 
   wait_for_health "$name" "$port" || {

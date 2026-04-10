@@ -46,16 +46,6 @@ services:
       KAFKA_CLUSTERS_0_NAME: baas-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
 
-  jaeger:
-    container_name: baas_jaeger
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686"  # Jaeger UI
-      - "4317:4317"    # OTLP gRPC
-      - "4318:4318"    # OTLP HTTP
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
-
   prometheus:
     container_name: baas_prometheus
     image: prom/prometheus:latest

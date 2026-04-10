@@ -27,16 +27,9 @@ management:
   endpoint:
     prometheus:
       access: unrestricted
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
   metrics:
     tags:
       application: ${spring.application.name}
-  otlp:
-    tracing:
-      endpoint: http://localhost:4318/v1/traces
 
 baas:
   kafka:

@@ -115,7 +115,6 @@ Every event published to Kafka follows this structure:
 - 📨 **Apache Kafka** — event-driven communication between microservices
 - 🗄️ **DynamoDB** — onboarding and account state persistence
 - 🐳 **LocalStack** — local AWS emulation (DynamoDB) via Docker
-- 🔍 **Jaeger** — distributed tracing (OpenTelemetry / OTLP)
 - 📊 **Prometheus + Grafana** — metrics and dashboards
 
 ---
@@ -135,7 +134,6 @@ This starts:
 | Kafka | `localhost:9092` |
 | Kafka UI | `http://localhost:8080` |
 | LocalStack (DynamoDB) | `http://localhost:4566` |
-| Jaeger UI | `http://localhost:16686` |
 | Prometheus | `http://localhost:9090` |
 | Grafana | `http://localhost:3001` (admin/admin) |
 
