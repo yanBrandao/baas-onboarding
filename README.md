@@ -1,6 +1,6 @@
 # 🏦 baas-onboarding
 
-A case study of a **bank account onboarding** system, inspired by real-world BaaS (Banking as a Service) architecture. The project simulates an event-driven workflow that takes a customer from initial request all the way to a fully provisioned bank account.
+A case study of a **bank account onboarding** system, inspired by real-world BaaS (Banking as a Service) architecture. The project simulates an event-driven workflow that takes a customer from an initial HTTP request all the way to a fully provisioned bank account.
 
 ---
 
@@ -8,43 +8,52 @@ A case study of a **bank account onboarding** system, inspired by real-world Baa
 
 ![Architecture](./docs/architecture.drawio.png)
 
-The onboarding flow is orchestrated through **SNS → SQS** message passing across four independent microservices. `baas-onboarding` is the entry point: it receives the customer data, generates an `onboarding_id`, persists it to **DynamoDB**, and publishes the first event to kick off the workflow.
+The onboarding flow is orchestrated through **Kafka** message passing across independent microservices. `baas-onboarding` is the entry point: it receives the customer data, generates an `onboarding_id`, persists it to **DynamoDB**, and publishes the first event to kick off the workflow.
 
-Each downstream microservice consumes from its own SQS queue, processes its step, and publishes the next message back to SNS — carrying the current state forward.
+Each downstream microservice consumes from its own Kafka topic, processes its step, and publishes the next message forward — carrying the current state.
 
-### 🔄 Workflow steps
+### 🔄 Workflow
 
 ```
-[HTTP Request]
-      │
-      ▼
-baas-onboarding ──► SNS ──► FRAUD_CHECK
-                                │
-                                ▼
-                         CUSTOMER_CREATION
-                                │
-                                ▼
-                         ACCOUNT_CREATION
-                                │
-                                ▼
-                        ACCOUNT_NOTIFICATION
+[HTTP POST /onboarding]
+        │
+        ▼
+baas-onboarding (9001)
+        │
+        │ Kafka: baas-frauds
+        ▼
+baas-frauds (9002)
+        │
+        │ Kafka: baas-account
+        ▼
+baas-account (9003)
+        │
+        │ Kafka: baas-webhook
+        ▼
+baas-webhook (9004)
+        │
+        │ PATCH /onboarding/{id}/status
+        ▼
+baas-onboarding (status updated)
 ```
 
 ---
 
 ## 📦 Modules
 
-| Module | Description |
-|---|---|
-| `baas-onboarding` | REST entry point — receives requests, stores state in DynamoDB, fires the first SNS event |
-| `baas-frauds` | Fraud detection service — listens on `baas-fraud-queue` SQS, runs fraud checks, and publishes result back to SNS |
-| `baas-common` | Shared library — canonical message types, step enums, and `OnboardingSnsPublisher` used by all microservices |
+| Module | Port | Description |
+|---|---|---|
+| `baas-onboarding` | 9001 | REST entry point — receives requests, persists state to DynamoDB, publishes to `baas-frauds` Kafka topic |
+| `baas-frauds` | 9002 | Fraud detection — consumes `baas-frauds` topic, runs fraud checks, publishes to `baas-account` topic |
+| `baas-account` | 9003 | Account provisioning — consumes `baas-account` topic, creates the account in DynamoDB, publishes to `baas-webhook` topic |
+| `baas-webhook` | 9004 | Notification — consumes `baas-webhook` topic, sends notification, and calls `PATCH /onboarding/{id}/status` to finalize the flow |
+| `baas-common` | — | Shared library — canonical message types, step enums, and `OnboardingEventPublisher` (Kafka) used by all microservices |
 
 ---
 
 ## 📨 Message Contract
 
-Every message published to SNS follows this structure:
+Every event published to Kafka follows this structure:
 
 ```json
 {
@@ -95,7 +104,7 @@ Every message published to SNS follows this structure:
 ```
 
 - **`step`** — the step currently being processed
-- **`next_steps`** — remaining steps in the pipeline; each microservice pops the first one to know where to route next
+- **`next_steps`** — remaining steps in the pipeline; each service pops the first one to know where to route next
 - **`metadata`** — tracks the result of each step and the overall onboarding status (`IN_PROGRESS`, `COMPLETED`, `FAILED`)
 
 ---
@@ -103,24 +112,34 @@ Every message published to SNS follows this structure:
 ## ⚙️ Tech Stack
 
 - ☕ **Java 25** + **Spring Boot**
-- 🗄️ **DynamoDB** — onboarding state persistence
-- 📣 **SNS / SQS** — event-driven communication between microservices
-- 🐳 **LocalStack** — local AWS emulation via Docker
+- 📨 **Apache Kafka** — event-driven communication between microservices
+- 🗄️ **DynamoDB** — onboarding and account state persistence
+- 🐳 **LocalStack** — local AWS emulation (DynamoDB) via Docker
+- 🔍 **Jaeger** — distributed tracing (OpenTelemetry / OTLP)
+- 📊 **Prometheus + Grafana** — metrics and dashboards
 
 ---
 
 ## 🚀 Running Locally
 
-**1. Start LocalStack**
+**1. Start infrastructure**
 
 ```bash
 docker compose up -d
 ```
 
-The init script at `localstack/init-scripts/init-aws.sh` automatically provisions:
-- `Onboarding` DynamoDB table
-- `baas-onboarding` SNS topic
-- `baas-fraud-queue` SQS queue (subscribed to the SNS topic)
+This starts:
+
+| Service | URL |
+|---|---|
+| Kafka | `localhost:9092` |
+| Kafka UI | `http://localhost:8080` |
+| LocalStack (DynamoDB) | `http://localhost:4566` |
+| Jaeger UI | `http://localhost:16686` |
+| Prometheus | `http://localhost:9090` |
+| Grafana | `http://localhost:3001` (admin/admin) |
+
+The LocalStack init script at `localstack/init-scripts/init-aws.sh` automatically provisions the `Onboarding` DynamoDB table on startup.
 
 > Wait a few seconds after starting before running the services — the init script runs asynchronously.
 
@@ -132,38 +151,32 @@ Run once, or after any change to `baas-common`:
 cd baas-common && ./gradlew publishToMavenLocal
 ```
 
-**3. Run `baas-onboarding`**
+**3. Run each service** _(separate terminals)_
 
 ```bash
-cd baas-onboarding
-./gradlew bootRun
+cd baas-onboarding && ./gradlew bootRun   # port 9001
+cd baas-frauds     && ./gradlew bootRun   # port 9002
+cd baas-account    && ./gradlew bootRun   # port 9003
+cd baas-webhook    && ./gradlew bootRun   # port 9004
 ```
 
-The API will be available at `http://localhost:9001`.
-
-**4. Run `baas-frauds`** _(separate terminal)_
+Or use the convenience script from the repo root:
 
 ```bash
-cd baas-frauds
-./gradlew bootRun
+./start-all.sh
 ```
 
-The fraud service will be available at `http://localhost:9002` and will start consuming messages from `baas-fraud-queue`.
-
-> **End-to-end flow:** Posting to `POST /onboarding` triggers an SNS event → SQS delivers it to `baas-frauds` → the fraud check runs → result is published back to SNS.
+**End-to-end flow:** `POST /onboarding` → Kafka `baas-frauds` → `baas-frauds` → Kafka `baas-account` → `baas-account` → Kafka `baas-webhook` → `baas-webhook` → `PATCH /onboarding/{id}/status`.
 
 ---
 
 ## 🧪 Running Tests
 
 ```bash
-# baas-onboarding
-cd baas-onboarding
-./gradlew test
-
-# baas-frauds
-cd baas-frauds
-./gradlew test
+cd baas-onboarding && ./gradlew test
+cd baas-frauds     && ./gradlew test
+cd baas-account    && ./gradlew test
+cd baas-webhook    && ./gradlew test
 ```
 
 ---
@@ -190,3 +203,50 @@ Returns only the current status.
     "status": "IN_PROGRESS"
 }
 ```
+
+### `PATCH /onboarding/{onboardingId}/status`
+Updates the onboarding status. Called internally by `baas-webhook` at the end of the workflow.
+
+```json
+{ "status": "COMPLETED" }
+```
+
+---
+
+## 🔧 Using baas-common in a new microservice
+
+1. Publish to Maven local (run once after any change):
+   ```bash
+   cd baas-common && ./gradlew publishToMavenLocal
+   ```
+
+2. Add to the microservice's `build.gradle`:
+   ```groovy
+   repositories { mavenLocal(); mavenCentral() }
+   dependencies {
+       implementation 'com.tapajos.baas:baas-common:0.0.1-SNAPSHOT'
+   }
+   ```
+
+3. Configure in `application.yaml`:
+   ```yaml
+   baas:
+     kafka:
+       bootstrap-servers: localhost:9092
+       consumer-topic: baas-<service-name>
+       topic: baas-<next-service-name>
+   ```
+
+4. Inject and use:
+   ```java
+   @Autowired OnboardingEventPublisher publisher;
+
+   OnboardingMessage next = OnboardingMessage.of(
+       message.onboardingId(),
+       OnboardingStep.FRAUD_CHECK,
+       message.data(),
+       metadata
+   );
+   publisher.publish(next);
+   ```
+   `OnboardingStep.nextSteps()` returns the remaining steps based on the current step's position in the workflow.
